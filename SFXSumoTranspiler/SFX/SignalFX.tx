@@ -1,0 +1,105 @@
+Model: inputs+=SingleInput;
+
+SFXId : name=ID;
+
+DataFunction: (stream_result_variable_name=SFXId ASSIGN)? DATA                    
+OPEN_PAREN    (metric_name=STRING|metric_name=SFXId)                   
+((COMMA        FILTER                        ASSIGN (filters*=Filter|filters*=SFXId)#)?       
+(COMMA        ROLLUP                         ASSIGN rollup_type=STRING)?    
+(COMMA        EXTRAPOLATION                  ASSIGN extrapolation=STRING)? 
+(COMMA        MAX_EXTRAPOLATIONS             ASSIGN maxex=NUMBER)?)#          
+CLOSE_PAREN;
+
+PlainTextQuery: (stream_result_variable_name=SFXId ASSIGN)? metric_name = STRING;
+
+FilteringQuery: !SFXExpression (stream_result_variable_name=SFXId ASSIGN)? (stream_query_to_filter=SFXId)? filters+=Filter;
+
+RefrencedQuery: !FilteringQuery (stream_result_variable_name=SFXId ASSIGN)? (refrenced_stream_query=SFXId | OPEN_PAREN refrenced_stream_query=SFXId CLOSE_PAREN);
+
+UnSupportedSFXFunctions:  (stream_result_variable_name=SFXId ASSIGN)? (name=ALERTS|name=GRAPHITE|name=NEWRELIC|name=EVENTS) OPEN_PAREN ANY_OTHER*;
+
+SingleInput: (input_type=PlainTextQuery | input_type=UnSupportedSFXFunctions | input_type=SFXFunction | input_type=DataFunction | input_type=RefrencedQuery | input_type=FilteringQuery | input_type=SFXExpression) (DOT method=sfx_method)*;
+
+//SingleInput: (input_type=PlainTextQuery | input_type=UnSupportedSFXFunctions | input_type=DataFunction |  input_type=RefrencedQuery | input_type=FilteringQuery | input_type=SFXFunction | input_type=SFXExpression) (DOT method=sfx_method)*;
+
+SFXFunction: (stream_result_variable_name=SFXId ASSIGN)? name=SFXId OPEN_PAREN params*=sfx_function_params[','] CLOSE_PAREN;
+
+sfx_function_params: param=NUMBER | param=SFXId | param=Expression;
+
+sfx_method: 
+  (name=ABOVE|name=BELOW) OPEN_PAREN limit=NUMBER COMMA keyvals*=optional_key_val[','] CLOSE_PAREN
+| name=PERCENTILE OPEN_PAREN pct=NUMBER COMMA keyvals*=optional_key_val[','] CLOSE_PAREN
+| name=BETWEEN OPEN_PAREN low_limit=NUMBER COMMA high_limit=NUMBER COMMA keyvals*=optional_key_val[','] CLOSE_PAREN
+| name=SFXId OPEN_PAREN keyvals*=optional_key_val[','] CLOSE_PAREN
+//Single keyless params
+| name=SFXId OPEN_PAREN value=STRING CLOSE_PAREN
+| name=SFXId OPEN_PAREN value=NUMBER CLOSE_PAREN
+| name=SFXId OPEN_PAREN value=BOOL CLOSE_PAREN
+| name=SFXId OPEN_PAREN value=SFXId CLOSE_PAREN
+
+;
+
+SFXExpression: (stream_result_variable_name=SFXId ASSIGN)? expr=Expression;
+
+Factor: !(Filter|FILTER) (items=ADD|items=MINUS)? ((items=NUMBER|items=SFXId) | items="(" items=Expression items=")"); 
+Term: !(Filter|FILTER) items=Factor ((items=STAR|items=DIV) items=Factor)*; 
+Expression: !(Filter|FILTER) items=Term ((items=ADD|items=MINUS) items=Term)* | items=Factor;     
+
+Filter: (and_kw=AND? not_kw=NOT? or_kw=OR? filter_funcs=FilterFunction | and_kw=AND? not_kw=NOT? or_kw=OR? OPEN_PAREN filters=Filter CLOSE_PAREN)+;
+FilterFunction: 
+FILTER OPEN_PAREN filter_key=STRING (COMMA queries+=STRING)+ (COMMA MATCH_MISSING ASSIGN match_missing=BOOL)? CLOSE_PAREN 
+;
+
+generic_value: NUMBER | STRING | BOOL | SFXId ;
+
+optional_key_val:
+  key=SFXId ASSIGN vals=NUMBER
+| key=SFXId ASSIGN vals=STRING
+| key=SFXId ASSIGN vals=BOOL
+| key=SFXId ASSIGN vals=SFXId
+| key=BY ASSIGN OPEN_BRACK  vals+=STRING[','] CLOSE_BRACK
+;
+
+ADD:                '+';  
+AND_OP:             '&';                                   
+ASSIGN:             '=';   
+CLOSE_BRACE:        '}';                                   
+CLOSE_BRACK:        ']';                                   
+CLOSE_PAREN:        ')';                                   
+COLON:              ':';                                   
+COMMA:              ',';                                    
+DIV:                '/';                                   
+DOT:                '.';                                  
+DQ:                 '"';   
+MINUS:              '-';                                   
+MOD:                '%';     
+OPEN_BRACE:         '{';                                   
+OPEN_BRACK:         '[';                                   
+OPEN_PAREN:         '(';  
+PIPE2:              '||';                                 
+SEMI:               ';';  
+SQ:                 "'";    
+STAR:               '*';   
+TRUE:               'True'; 
+NUMBER:             (/-?[\d.]+(?:e-?\d+)?/|/\d+\.?\d*/);
+
+ABOVE:              'above';   
+ALERTS:             'alerts';
+AND:                'and';   
+BY:                 'by';  
+BETWEEN:            'between'; 
+BELOW:              'below';   
+BOTTOM:             'bottom';   
+DATA:               'data';                                
+FILTER:             'filter'; 
+EXTRAPOLATION:      'extrapolation';  
+EVENTS:             'events';
+GRAPHITE:           'graphite';
+MAX_EXTRAPOLATIONS: 'maxExtrapolations';                                
+MATCH_MISSING:      'match_missing';
+NEWRELIC:           'newrelic';  
+NOT:                'not'; 
+OR:                'or'; 
+PERCENTILE:         'percentile';                               
+ROLLUP:             'rollup';
+ANY_OTHER:           /[\S\s]/;
