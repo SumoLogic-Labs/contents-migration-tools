@@ -1,6 +1,6 @@
 SFX To Sumo Transpiler
 =========================
-[SignalFlow](https://dev.splunk.com/observability/docs/signalflow/) (Functions, Methods etc.) QL to [Sumo Logic Metrics](https://help.sumologic.com/Metrics/Metric-Queries-and-Alerts/07Metrics_Operators) QL (Advanced based queries) Transpiler!
+[SignalFlow / Splunk Observability Cloud](https://dev.splunk.com/observability/docs/signalflow/) (Functions, Methods etc.) QL to [Sumo Logic Metrics](https://help.sumologic.com/Metrics/Metric-Queries-and-Alerts/07Metrics_Operators) QL (Advanced based queries) Transpiler!
 
 Main Features:
 ===============
