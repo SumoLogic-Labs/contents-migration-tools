@@ -129,6 +129,7 @@ dmypy.json
 .pyre/
 
 # MacOSX files
+**/.DS_Store
 .DS_Store
 .antlr/
 .vscode/*
